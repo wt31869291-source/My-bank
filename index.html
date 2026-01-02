@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>信用卡還款紀錄</title>
+    <style>
+        :root { --primary-red: #d32f2f; --bg-pink: #fceeee; --card-white: #ffffff; }
+        body { font-family: -apple-system, sans-serif; background-color: var(--bg-pink); margin: 0; padding: 15px; color: #333; }
+        .card { background: var(--card-white); border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .card-title { font-weight: bold; font-size: 18px; margin-bottom: 15px; color: var(--primary-red); border-bottom: 1px solid #eee; padding-bottom: 8px; }
+        input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; margin-top: 5px; }
+        .progress-container { background: #eee; border-radius: 10px; height: 12px; margin: 15px 0; overflow: hidden; }
+        .progress-bar { background: linear-gradient(90deg, #ff8a80, #d32f2f); width: 0%; height: 100%; transition: width 0.5s; }
+        .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #fdf2f2; padding: 12px; border-radius: 12px; }
+        .val { font-weight: bold; color: var(--primary-red); display: block; font-size: 16px; }
+        .save-btn { width: 100%; background: #2ecc71; color: white; border: none; padding: 16px; border-radius: 15px; font-size: 18px; font-weight: bold; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h2 style="text-align: center; color: var(--primary-red);">💳 債務清償進度</h2>
+    <div class="card">
+        <div class="card-title">信用卡 (A)</div>
+        <label>總欠款 / 已繳 / 利率%</label>
+        <div style="display: flex; gap: 5px;">
+            <input type="number" id="totalA" placeholder="總額" oninput="calc('A')">
+            <input type="number" id="paidA" placeholder="已繳" oninput="calc('A')">
+            <input type="number" id="rateA" placeholder="%" oninput="calc('A')">
+        </div>
+        <div class="progress-container"><div id="barA" class="progress-bar"></div></div>
+        <div class="result-grid">
+            <div>進度<span id="pctA" class="val">0%</span></div>
+            <div>月利息<span id="intA" class="val">$0</span></div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-title">信用卡 (B)</div>
+        <label>總欠款 / 已繳 / 利率%</label>
+        <div style="display: flex; gap: 5px;">
+            <input type="number" id="totalB" placeholder="總額" oninput="calc('B')">
+            <input type="number" id="paidB" placeholder="已繳" oninput="calc('B')">
+            <input type="number" id="rateB" placeholder="%" oninput="calc('B')">
+        </div>
+        <div class="progress-container"><div id="barB" class="progress-bar"></div></div>
+        <div class="result-grid">
+            <div>進度<span id="pctB" class="val">0%</span></div>
+            <div>月利息<span id="intB" class="val">$0</span></div>
+        </div>
+    </div>
+    <button class="save-btn" onclick="saveData()">💾 儲存所有紀錄</button>
+    <script>
+        window.onload = function() {
+            const saved = localStorage.getItem('creditCardData');
+            if(saved) {
+                const d = JSON.parse(saved);
+                ['A', 'B'].forEach(k => {
+                    document.getElementById('total'+k).value = d[k].total;
+                    document.getElementById('paid'+k).value = d[k].paid;
+                    document.getElementById('rate'+k).value = d[k].rate;
+                    calc(k);
+                });
+            }
+        };
+        function calc(k) {
+            const t = parseFloat(document.getElementById('total'+k).value) || 0;
+            const p = parseFloat(document.getElementById('paid'+k).value) || 0;
+            const r = (parseFloat(document.getElementById('rate'+k).value) || 0) / 100;
+            if (t > 0) {
+                const pct = Math.min((p / t) * 100, 100).toFixed(1);
+                document.getElementById('bar'+k).style.width = pct + '%';
+                document.getElementById('pct'+k).innerText = pct + '%';
+                const mi = Math.round(((t - p) * r) / 12);
+                document.getElementById('int'+k).innerText = '$' + mi.toLocaleString();
+            }
+        }
+        function saveData() {
+            const data = {
+                A: { total: document.getElementById('totalA').value, paid: document.getElementById('paidA').value, rate: document.getElementById('rateA').value },
+                B: { total: document.getElementById('totalB').value, paid: document.getElementById('paidB').value, rate: document.getElementById('rateB').value }
+            };
+            localStorage.setItem('creditCardData', JSON.stringify(data));
+            alert('紀錄已儲存！');
+        }
+    </script>
+</body>
+</html>
