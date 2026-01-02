@@ -3,83 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>信用卡還款紀錄</title>
+    <title>財務小管家</title>
     <style>
         :root { --primary-red: #d32f2f; --bg-pink: #fceeee; --card-white: #ffffff; }
-        body { font-family: -apple-system, sans-serif; background-color: var(--bg-pink); margin: 0; padding: 15px; color: #333; }
-        .card { background: var(--card-white); border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .card-title { font-weight: bold; font-size: 18px; margin-bottom: 15px; color: var(--primary-red); border-bottom: 1px solid #eee; padding-bottom: 8px; }
-        input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; margin-top: 5px; }
-        .progress-container { background: #eee; border-radius: 10px; height: 12px; margin: 15px 0; overflow: hidden; }
+        body { font-family: -apple-system, sans-serif; background-color: var(--bg-pink); margin: 0; padding: 15px; color: #333; padding-bottom: 80px; }
+        .tab-container { display: flex; justify-content: center; margin-bottom: 15px; background: #fff; border-radius: 50px; padding: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .tab { flex: 1; text-align: center; padding: 10px; border-radius: 50px; font-weight: bold; cursor: pointer; color: #777; }
+        .tab.active { background: var(--primary-red); color: white; }
+        
+        .page { display: none; }
+        .page.active { display: block; }
+        
+        .card { background: var(--card-white); border-radius: 20px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .card-title { font-weight: bold; font-size: 17px; margin-bottom: 12px; color: var(--primary-red); border-left: 4px solid var(--primary-red); padding-left: 10px; }
+        
+        label { font-size: 12px; color: #666; display: block; margin-top: 8px; }
+        input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; margin-top: 4px; }
+        
+        .progress-container { background: #eee; border-radius: 10px; height: 10px; margin: 12px 0; overflow: hidden; }
         .progress-bar { background: linear-gradient(90deg, #ff8a80, #d32f2f); width: 0%; height: 100%; transition: width 0.5s; }
-        .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #fdf2f2; padding: 12px; border-radius: 12px; }
-        .val { font-weight: bold; color: var(--primary-red); display: block; font-size: 16px; }
-        .save-btn { width: 100%; background: #2ecc71; color: white; border: none; padding: 16px; border-radius: 15px; font-size: 18px; font-weight: bold; margin-top: 10px; }
+        
+        .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #fffcfc; padding: 10px; border-radius: 10px; font-size: 13px; }
+        .val { font-weight: bold; color: var(--primary-red); }
+        
+        .save-btn { position: fixed; bottom: 20px; left: 15px; right: 15px; background: #2ecc71; color: white; border: none; padding: 15px; border-radius: 50px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
-    <h2 style="text-align: center; color: var(--primary-red);">💳 債務清償進度</h2>
-    <div class="card">
-        <div class="card-title">信用卡 (A)</div>
-        <label>總欠款 / 已繳 / 利率%</label>
-        <div style="display: flex; gap: 5px;">
-            <input type="number" id="totalA" placeholder="總額" oninput="calc('A')">
-            <input type="number" id="paidA" placeholder="已繳" oninput="calc('A')">
-            <input type="number" id="rateA" placeholder="%" oninput="calc('A')">
+
+    <div class="tab-container">
+        <div class="tab active" onclick="switchPage('main')">還款進度</div>
+        <div class="tab" onclick="switchPage('installment')">分期明細</div>
+    </div>
+
+    <div id="page-main" class="page active">
+        <div class="card">
+            <div class="card-title">國泰世華 (Cathay)</div>
+            <label>原始欠款總額</label><input type="number" id="totalCathay" oninput="calc()">
+            <label>目前累計已繳</label><input type="number" id="paidCathay" oninput="calc()">
+            <label>循環年利率 (%)</label><input type="number" id="rateCathay" oninput="calc()">
+            <div class="progress-container"><div id="barCathay" class="progress-bar"></div></div>
+            <div class="result-grid">
+                <div>進度：<span id="pctCathay" class="val">0%</span></div>
+                <div>月利息：<span id="intCathay" class="val">$0</span></div>
+            </div>
         </div>
-        <div class="progress-container"><div id="barA" class="progress-bar"></div></div>
-        <div class="result-grid">
-            <div>進度<span id="pctA" class="val">0%</span></div>
-            <div>月利息<span id="intA" class="val">$0</span></div>
+
+        <div class="card">
+            <div class="card-title">台新銀行 (Taishin)</div>
+            <label>原始欠款總額</label><input type="number" id="totalTaishin" oninput="calc()">
+            <label>目前累計已繳</label><input type="number" id="paidTaishin" oninput="calc()">
+            <label>循環年利率 (%)</label><input type="number" id="rateTaishin" oninput="calc()">
+            <div class="progress-container"><div id="barTaishin" class="progress-bar"></div></div>
+            <div class="result-grid">
+                <div>進度：<span id="pctTaishin" class="val">0%</span></div>
+                <div>月利息：<span id="intTaishin" class="val">$0</span></div>
+            </div>
         </div>
     </div>
-    <div class="card">
-        <div class="card-title">信用卡 (B)</div>
-        <label>總欠款 / 已繳 / 利率%</label>
-        <div style="display: flex; gap: 5px;">
-            <input type="number" id="totalB" placeholder="總額" oninput="calc('B')">
-            <input type="number" id="paidB" placeholder="已繳" oninput="calc('B')">
-            <input type="number" id="rateB" placeholder="%" oninput="calc('B')">
+
+    <div id="page-installment" class="page">
+        <div class="card">
+            <div class="card-title">國泰 - 分期項目</div>
+            <label>分期總金額</label><input type="number" id="insTotalCathay">
+            <label>已付期數 / 總期數</label>
+            <div style="display:flex; gap:5px;">
+                <input type="number" id="insPaidCathay" placeholder="已付">
+                <input type="number" id="insAllCathay" placeholder="總期">
+            </div>
+            <label>備註 (例如：買手機)</label><input type="text" id="insNoteCathay">
         </div>
-        <div class="progress-container"><div id="barB" class="progress-bar"></div></div>
-        <div class="result-grid">
-            <div>進度<span id="pctB" class="val">0%</span></div>
-            <div>月利息<span id="intB" class="val">$0</span></div>
+
+        <div class="card">
+            <div class="card-title">台新 - 分期項目</div>
+            <label>分期總金額</label><input type="number" id="insTotalTaishin">
+            <label>已付期數 / 總期數</label>
+            <div style="display:flex; gap:5px;">
+                <input type="number" id="insPaidTaishin" placeholder="已付">
+                <input type="number" id="insAllTaishin" placeholder="總期">
+            </div>
+            <label>備註 (例如：保險)</label><input type="text" id="insNoteTaishin">
         </div>
     </div>
-    <button class="save-btn" onclick="saveData()">💾 儲存所有紀錄</button>
+
+    <button class="save-btn" onclick="saveData()">💾 儲存所有資料</button>
+
     <script>
+        function switchPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('page-' + pageId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
         window.onload = function() {
-            const saved = localStorage.getItem('creditCardData');
+            const saved = localStorage.getItem('bankAppData');
             if(saved) {
                 const d = JSON.parse(saved);
-                ['A', 'B'].forEach(k => {
+                // 載入主頁資料
+                ['Cathay', 'Taishin'].forEach(k => {
                     document.getElementById('total'+k).value = d[k].total;
                     document.getElementById('paid'+k).value = d[k].paid;
                     document.getElementById('rate'+k).value = d[k].rate;
-                    calc(k);
+                    // 載入分期資料
+                    document.getElementById('insTotal'+k).value = d[k].insTotal;
+                    document.getElementById('insPaid'+k).value = d[k].insPaid;
+                    document.getElementById('insAll'+k).value = d[k].insAll;
+                    document.getElementById('insNote'+k).value = d[k].insNote;
                 });
+                calc();
             }
         };
-        function calc(k) {
-            const t = parseFloat(document.getElementById('total'+k).value) || 0;
-            const p = parseFloat(document.getElementById('paid'+k).value) || 0;
-            const r = (parseFloat(document.getElementById('rate'+k).value) || 0) / 100;
-            if (t > 0) {
-                const pct = Math.min((p / t) * 100, 100).toFixed(1);
-                document.getElementById('bar'+k).style.width = pct + '%';
-                document.getElementById('pct'+k).innerText = pct + '%';
-                const mi = Math.round(((t - p) * r) / 12);
-                document.getElementById('int'+k).innerText = '$' + mi.toLocaleString();
-            }
+
+        function calc() {
+            ['Cathay', 'Taishin'].forEach(k => {
+                const t = parseFloat(document.getElementById('total'+k).value) || 0;
+                const p = parseFloat(document.getElementById('paid'+k).value) || 0;
+                const r = (parseFloat(document.getElementById('rate'+k).value) || 0) / 100;
+                if (t > 0) {
+                    const pct = Math.min((p / t) * 100, 100).toFixed(1);
+                    document.getElementById('bar'+k).style.width = pct + '%';
+                    document.getElementById('pct'+k).innerText = pct + '%';
+                    const mi = Math.round(((t - p) * r) / 12);
+                    document.getElementById('int'+k).innerText = '$' + mi.toLocaleString();
+                }
+            });
         }
+
         function saveData() {
-            const data = {
-                A: { total: document.getElementById('totalA').value, paid: document.getElementById('paidA').value, rate: document.getElementById('rateA').value },
-                B: { total: document.getElementById('totalB').value, paid: document.getElementById('paidB').value, rate: document.getElementById('rateB').value }
-            };
-            localStorage.setItem('creditCardData', JSON.stringify(data));
-            alert('紀錄已儲存！');
+            const data = {};
+            ['Cathay', 'Taishin'].forEach(k => {
+                data[k] = {
+                    total: document.getElementById('total'+k).value,
+                    paid: document.getElementById('paid'+k).value,
+                    rate: document.getElementById('rate'+k).value,
+                    insTotal: document.getElementById('insTotal'+k).value,
+                    insPaid: document.getElementById('insPaid'+k).value,
+                    insAll: document.getElementById('insAll'+k).value,
+                    insNote: document.getElementById('insNote'+k).value
+                };
+            });
+            localStorage.setItem('bankAppData', JSON.stringify(data));
+            alert('國泰與台新的資料已全部儲存！');
         }
     </script>
 </body>
