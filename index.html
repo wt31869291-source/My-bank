@@ -3,148 +3,183 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>財務小管家</title>
+    <title>財務小管家 Pro</title>
     <style>
         :root { --primary-red: #d32f2f; --bg-pink: #fceeee; --card-white: #ffffff; }
-        body { font-family: -apple-system, sans-serif; background-color: var(--bg-pink); margin: 0; padding: 15px; color: #333; padding-bottom: 80px; }
+        body { font-family: -apple-system, sans-serif; background-color: var(--bg-pink); margin: 0; padding: 15px; color: #333; padding-bottom: 100px; }
         .tab-container { display: flex; justify-content: center; margin-bottom: 15px; background: #fff; border-radius: 50px; padding: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .tab { flex: 1; text-align: center; padding: 10px; border-radius: 50px; font-weight: bold; cursor: pointer; color: #777; }
         .tab.active { background: var(--primary-red); color: white; }
-        
         .page { display: none; }
         .page.active { display: block; }
-        
         .card { background: var(--card-white); border-radius: 20px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .card-title { font-weight: bold; font-size: 17px; margin-bottom: 12px; color: var(--primary-red); border-left: 4px solid var(--primary-red); padding-left: 10px; }
-        
         label { font-size: 12px; color: #666; display: block; margin-top: 8px; }
-        input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; margin-top: 4px; }
-        
+        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; margin-top: 4px; }
         .progress-container { background: #eee; border-radius: 10px; height: 10px; margin: 12px 0; overflow: hidden; }
         .progress-bar { background: linear-gradient(90deg, #ff8a80, #d32f2f); width: 0%; height: 100%; transition: width 0.5s; }
-        
-        .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #fffcfc; padding: 10px; border-radius: 10px; font-size: 13px; }
+        .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #fffcfc; padding: 10px; border-radius: 10px; font-size: 13px; margin-top: 10px; }
         .val { font-weight: bold; color: var(--primary-red); }
-        
-        .save-btn { position: fixed; bottom: 20px; left: 15px; right: 15px; background: #2ecc71; color: white; border: none; padding: 15px; border-radius: 50px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .summary-card { background: #333; color: white; border-radius: 20px; padding: 20px; margin-bottom: 15px; }
+        .summary-val { font-size: 24px; font-weight: bold; color: #ffeb3b; }
+        .month-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        .month-table th, .month-table td { border-bottom: 1px solid #eee; padding: 8px; text-align: left; }
+        .month-table th { color: #666; font-weight: normal; }
+        .save-btn { position: fixed; bottom: 20px; left: 15px; right: 15px; background: #2ecc71; color: white; border: none; padding: 15px; border-radius: 50px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 100; }
     </style>
 </head>
 <body>
 
+    <div class="summary-card">
+        <div style="font-size: 14px; opacity: 0.8;">目前剩餘未還總額 (國泰+台新)</div>
+        <div id="grandTotalRemain" class="summary-val">$0</div>
+    </div>
+
     <div class="tab-container">
         <div class="tab active" onclick="switchPage('main')">還款進度</div>
-        <div class="tab" onclick="switchPage('installment')">分期明細</div>
+        <div class="tab" onclick="switchPage('installment')">分期/月份統整</div>
     </div>
 
     <div id="page-main" class="page active">
         <div class="card">
-            <div class="card-title">國泰世華 (Cathay)</div>
+            <div class="card-title">國泰世華</div>
             <label>原始欠款總額</label><input type="number" id="totalCathay" oninput="calc()">
             <label>目前累計已繳</label><input type="number" id="paidCathay" oninput="calc()">
             <label>循環年利率 (%)</label><input type="number" id="rateCathay" oninput="calc()">
             <div class="progress-container"><div id="barCathay" class="progress-bar"></div></div>
             <div class="result-grid">
                 <div>進度：<span id="pctCathay" class="val">0%</span></div>
-                <div>月利息：<span id="intCathay" class="val">$0</span></div>
+                <div>剩餘：<span id="remCathay" class="val">$0</span></div>
             </div>
         </div>
 
         <div class="card">
-            <div class="card-title">台新銀行 (Taishin)</div>
+            <div class="card-title">台新銀行</div>
             <label>原始欠款總額</label><input type="number" id="totalTaishin" oninput="calc()">
             <label>目前累計已繳</label><input type="number" id="paidTaishin" oninput="calc()">
             <label>循環年利率 (%)</label><input type="number" id="rateTaishin" oninput="calc()">
             <div class="progress-container"><div id="barTaishin" class="progress-bar"></div></div>
             <div class="result-grid">
                 <div>進度：<span id="pctTaishin" class="val">0%</span></div>
-                <div>月利息：<span id="intTaishin" class="val">$0</span></div>
+                <div>剩餘：<span id="remTaishin" class="val">$0</span></div>
             </div>
         </div>
     </div>
 
     <div id="page-installment" class="page">
         <div class="card">
-            <div class="card-title">國泰 - 分期項目</div>
-            <label>分期總金額</label><input type="number" id="insTotalCathay">
-            <label>已付期數 / 總期數</label>
-            <div style="display:flex; gap:5px;">
-                <input type="number" id="insPaidCathay" placeholder="已付">
-                <input type="number" id="insAllCathay" placeholder="總期">
-            </div>
-            <label>備註 (例如：買手機)</label><input type="text" id="insNoteCathay">
+            <div class="card-title">分期輸入 (國泰/台新通用)</div>
+            <label>分期名稱 (如：買手機)</label><input type="text" id="insName">
+            <label>每月應付金額</label><input type="number" id="insMonthlyPrice">
+            <label>分期起始月份</label>
+            <input type="month" id="insStartMonth">
+            <label>總期數</label><input type="number" id="insTotalCount" placeholder="如：12">
+            <button onclick="addIns()" style="margin-top:10px; width:100%; padding:10px; background:#eee; border:none; border-radius:8px;">＋加入統整表</button>
         </div>
 
         <div class="card">
-            <div class="card-title">台新 - 分期項目</div>
-            <label>分期總金額</label><input type="number" id="insTotalTaishin">
-            <label>已付期數 / 總期數</label>
-            <div style="display:flex; gap:5px;">
-                <input type="number" id="insPaidTaishin" placeholder="已付">
-                <input type="number" id="insAllTaishin" placeholder="總期">
-            </div>
-            <label>備註 (例如：保險)</label><input type="text" id="insNoteTaishin">
+            <div class="card-title">🗓 未來月份繳款統整</div>
+            <table class="month-table" id="monthTable">
+                <thead><tr><th>月份</th><th>預估應付總額</th></tr></thead>
+                <tbody></tbody>
+            </table>
         </div>
     </div>
 
-    <button class="save-btn" onclick="saveData()">💾 儲存所有資料</button>
+    <button class="save-btn" onclick="saveData()">💾 儲存並更新資料</button>
 
     <script>
+        let installments = [];
+
         function switchPage(pageId) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.getElementById('page-' + pageId).classList.add('active');
             event.currentTarget.classList.add('active');
+            if(pageId === 'installment') updateMonthTable();
         }
 
         window.onload = function() {
-            const saved = localStorage.getItem('bankAppData');
+            const saved = localStorage.getItem('bankAppProData');
             if(saved) {
                 const d = JSON.parse(saved);
-                // 載入主頁資料
                 ['Cathay', 'Taishin'].forEach(k => {
                     document.getElementById('total'+k).value = d[k].total;
                     document.getElementById('paid'+k).value = d[k].paid;
                     document.getElementById('rate'+k).value = d[k].rate;
-                    // 載入分期資料
-                    document.getElementById('insTotal'+k).value = d[k].insTotal;
-                    document.getElementById('insPaid'+k).value = d[k].insPaid;
-                    document.getElementById('insAll'+k).value = d[k].insAll;
-                    document.getElementById('insNote'+k).value = d[k].insNote;
                 });
+                installments = d.installments || [];
                 calc();
+                updateMonthTable();
             }
         };
 
         function calc() {
+            let grandTotal = 0;
             ['Cathay', 'Taishin'].forEach(k => {
                 const t = parseFloat(document.getElementById('total'+k).value) || 0;
                 const p = parseFloat(document.getElementById('paid'+k).value) || 0;
                 const r = (parseFloat(document.getElementById('rate'+k).value) || 0) / 100;
+                const remain = Math.max(t - p, 0);
+                grandTotal += remain;
+                
                 if (t > 0) {
                     const pct = Math.min((p / t) * 100, 100).toFixed(1);
                     document.getElementById('bar'+k).style.width = pct + '%';
                     document.getElementById('pct'+k).innerText = pct + '%';
-                    const mi = Math.round(((t - p) * r) / 12);
-                    document.getElementById('int'+k).innerText = '$' + mi.toLocaleString();
+                    document.getElementById('rem'+k).innerText = '$' + remain.toLocaleString();
                 }
+            });
+            document.getElementById('grandTotalRemain').innerText = '$' + grandTotal.toLocaleString();
+        }
+
+        function addIns() {
+            const ins = {
+                name: document.getElementById('insName').value,
+                price: parseFloat(document.getElementById('insMonthlyPrice').value) || 0,
+                start: document.getElementById('insStartMonth').value,
+                count: parseInt(document.getElementById('insTotalCount').value) || 0
+            };
+            if(!ins.start || ins.price <= 0) return alert('請完整填寫分期資訊');
+            installments.push(ins);
+            updateMonthTable();
+            alert('已加入！記得按下方儲存按鈕');
+        }
+
+        function updateMonthTable() {
+            const monthMap = {};
+            installments.forEach(ins => {
+                let [year, month] = ins.start.split('-').map(Number);
+                for(let i=0; i<ins.count; i++) {
+                    let curM = month + i;
+                    let curY = year + Math.floor((curM - 1) / 12);
+                    let displayM = ((curM - 1) % 12) + 1;
+                    let key = `${curY}-${displayM.toString().padStart(2, '0')}`;
+                    monthMap[key] = (monthMap[key] || 0) + ins.price;
+                }
+            });
+
+            const sortedMonths = Object.keys(monthMap).sort();
+            const tbody = document.querySelector('#monthTable tbody');
+            tbody.innerHTML = '';
+            sortedMonths.forEach(m => {
+                const row = `<tr><td>${m}</td><td class="val">$${monthMap[m].toLocaleString()}</td></tr>`;
+                tbody.innerHTML += row;
             });
         }
 
         function saveData() {
-            const data = {};
+            const data = { installments: installments };
             ['Cathay', 'Taishin'].forEach(k => {
                 data[k] = {
                     total: document.getElementById('total'+k).value,
                     paid: document.getElementById('paid'+k).value,
-                    rate: document.getElementById('rate'+k).value,
-                    insTotal: document.getElementById('insTotal'+k).value,
-                    insPaid: document.getElementById('insPaid'+k).value,
-                    insAll: document.getElementById('insAll'+k).value,
-                    insNote: document.getElementById('insNote'+k).value
+                    rate: document.getElementById('rate'+k).value
                 };
             });
-            localStorage.setItem('bankAppData', JSON.stringify(data));
-            alert('國泰與台新的資料已全部儲存！');
+            localStorage.setItem('bankAppProData', JSON.stringify(data));
+            calc();
+            alert('所有數據與分期計畫已儲存！');
         }
     </script>
 </body>
